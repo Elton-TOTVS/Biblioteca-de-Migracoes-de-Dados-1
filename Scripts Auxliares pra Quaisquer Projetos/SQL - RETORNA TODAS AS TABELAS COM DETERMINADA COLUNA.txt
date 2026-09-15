@@ -1,0 +1,14 @@
+DECLARE @NomedaColuna SYSNAME = '%CARGO%';
+
+SELECT 
+    s.name AS schema_name,
+    t.name AS table_name,
+    c.name AS column_name
+FROM sys.tables t
+INNER JOIN sys.schemas s 
+    ON s.schema_id = t.schema_id
+INNER JOIN sys.columns c 
+    ON c.object_id = t.object_id
+WHERE s.name = 'dbo'
+  AND c.name LIKE @NomedaColuna
+ORDER BY t.name;

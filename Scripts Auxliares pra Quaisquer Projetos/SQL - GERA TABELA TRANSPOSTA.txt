@@ -1,0 +1,29 @@
+DECLARE @Tabela SYSNAME = 'EBC';
+DECLARE @SQL NVARCHAR(MAX);
+
+SELECT @SQL = '
+SELECT
+    V.Campo,
+    V.Valor
+FROM (
+    SELECT TOP 1 *
+    FROM ' + QUOTENAME(@Tabela) + '
+) T
+CROSS APPLY (
+    VALUES
+    ' +
+    STRING_AGG(
+        CAST(
+            '(''' + C.name + ''',
+              CAST(T.' + QUOTENAME(C.name) + ' AS VARCHAR(MAX)))'
+            AS NVARCHAR(MAX)
+        ),
+        ','
+    ) WITHIN GROUP (ORDER BY C.column_id)
+    + '
+) V(Campo, Valor);
+'
+FROM sys.columns C
+WHERE C.object_id = OBJECT_ID(@Tabela);
+
+EXEC sp_executesql @SQL;

@@ -1,0 +1,59 @@
+/* ============================================================
+   CONFIGURAÇÃO
+   ============================================================ */
+
+DECLARE @PADRAO_BANCO VARCHAR(200) = 'ZMIGRA_GENNESIS%';
+DECLARE @PADRAO_TABELA VARCHAR(200) = 'ZMIGRA%_COL_%';
+
+DECLARE @SQL NVARCHAR(MAX) = N'';
+
+
+/* ============================================================
+   GERAÇÃO DO SCRIPT
+   ============================================================ */
+
+SELECT @SQL = STRING_AGG(
+    CAST(
+        N'
+SELECT
+    ''' + REPLACE(d.name, '''', '''''') + N''' AS BANCO,
+    OBJECT_SCHEMA_NAME(t.object_id, DB_ID(''' + REPLACE(d.name, '''', '''''') + N''')) AS ESQUEMA,
+    t.name AS TABELA,
+    ''USE ' + QUOTENAME(d.name) + N';
+DROP TABLE ''
+        + QUOTENAME(
+            OBJECT_SCHEMA_NAME(
+                t.object_id,
+                DB_ID(''' + REPLACE(d.name, '''', '''''') + N''')
+            )
+          )
+        + ''.''
+        + QUOTENAME(t.name)
+        + '';'' AS SCRIPT
+FROM ' + QUOTENAME(d.name) + N'.sys.tables t
+WHERE t.name LIKE ''' + REPLACE(@PADRAO_TABELA, '''', '''''') + N''''
+        AS NVARCHAR(MAX)
+    ),
+    CHAR(13) + CHAR(10) +
+    N'UNION ALL' +
+    CHAR(13) + CHAR(10)
+)
+FROM sys.databases d
+WHERE d.name LIKE @PADRAO_BANCO
+  AND d.state_desc = 'ONLINE'
+  AND d.database_id > 4;
+
+
+/* ============================================================
+   EXECUTA SOMENTE A CONSULTA DE LEITURA
+   NÃO EXECUTA OS DROP TABLE
+   ============================================================ */
+
+IF @SQL IS NOT NULL
+BEGIN
+    EXEC sys.sp_executesql @SQL;
+END
+ELSE
+BEGIN
+    PRINT 'Nenhum banco encontrado.';
+END;

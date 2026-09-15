@@ -1,0 +1,174 @@
+======================================================================================================================
+PERIODO AQUISISTIVO===================================================================================================
+======================================================================================================================
+
+-USAR NO RM
+SELECT
+  CODCOLIGADA,
+  CHAPA,
+  FIMPERAQUIS,
+  INICIOPERAQUIS,
+  PERIODOABERTO
+FROM PFUFERIAS
+
+SELECT ZMIGRA_PFUFERIAS.*, PFUFERIAS.CHAPA
+FROM ZMIGRA_PFUFERIAS
+LEFT JOIN PFUFERIAS
+   ON PFUFERIAS.CODCOLIGADA = ZMIGRA_PFUFERIAS.CODCOLIGADA
+  AND PFUFERIAS.CHAPA = ZMIGRA_PFUFERIAS.CHAPA
+  AND FORMAT(PFUFERIAS.INICIOPERAQUIS, 'ddMMyyyy') = ZMIGRA_PFUFERIAS.[Data inicial do período aquisitivo]
+  AND FORMAT(PFUFERIAS.FIMPERAQUIS, 'ddMMyyyy') = ZMIGRA_PFUFERIAS.[Data final do período aquisitivo]
+WHERE PFUFERIAS.CHAPA IS NULL
+ORDER BY 1,2
+
+======================================================================================================================
+PERIODO DE GOZO=======================================================================================================
+======================================================================================================================
+
+-USAR NO RM
+SELECT
+  CODCOLIGADA,
+  CHAPA,
+  FIMPERAQUIS,
+  DATAPAGTO,
+  DATAINICIO,
+  DATAFIM,
+  DATAAVISO
+FROM PFUFERIASPER
+
+SELECT ZMIGRA_PFUFERIASPER.*
+FROM ZMIGRA_PFUFERIASPER
+LEFT JOIN PFUFERIASPER
+   ON PFUFERIASPER.CODCOLIGADA = ZMIGRA_PFUFERIASPER.CODCOLIGADA
+  AND PFUFERIASPER.CHAPA = ZMIGRA_PFUFERIASPER.CHAPA
+  AND FORMAT(PFUFERIASPER.FIMPERAQUIS, 'ddMMyyyy') = ZMIGRA_PFUFERIASPER.[Data final do período aquisitivo]
+  AND FORMAT(PFUFERIASPER.DATAPAGTO, 'ddMMyyyy') = ZMIGRA_PFUFERIASPER.[Data de pagamento das férias]
+  AND FORMAT(PFUFERIASPER.DATAINICIO, 'ddMMyyyy') = ZMIGRA_PFUFERIASPER.[Data de início das férias]
+  AND FORMAT(PFUFERIASPER.DATAFIM, 'ddMMyyyy') = ZMIGRA_PFUFERIASPER.[Data de fim das férias]
+  AND FORMAT(PFUFERIASPER.DATAAVISO, 'ddMMyyyy') = ZMIGRA_PFUFERIASPER.[Data de aviso das férias]
+WHERE PFUFERIASPER.CHAPA IS NULL
+ORDER BY 1,2
+
+======================================================================================================================
+RECIBO DE FERIAS======================================================================================================
+======================================================================================================================
+
+-USAR NO RM
+SELECT
+  CODCOLIGADA,
+  CHAPA,
+  FIMPERAQUIS,
+  DATAPAGTO,
+  IRRF,
+  BASEIRRF,
+  LIQUIDO
+FROM PFUFERIASRECIBO
+
+SELECT ZMIGRA_PFUFERIASRECIBO.* 
+FROM ZMIGRA_PFUFERIASRECIBO
+LEFT JOIN PFUFERIASRECIBO
+   ON PFUFERIASRECIBO.CODCOLIGADA										= ZMIGRA_PFUFERIASRECIBO.CODCOLIGADA
+  AND PFUFERIASRECIBO.CHAPA												= ZMIGRA_PFUFERIASRECIBO.CHAPA
+  AND FORMAT(CAST(PFUFERIASRECIBO.FIMPERAQUIS AS DATE), 'ddMMyyyy')		= ZMIGRA_PFUFERIASRECIBO.[Data final do período aquisitivo]
+  AND FORMAT(CAST(PFUFERIASRECIBO.DATAPAGTO	AS DATE), 'ddMMyyyy')		= ZMIGRA_PFUFERIASRECIBO.[Data de pagamento das férias]
+  AND PFUFERIASRECIBO.IRRF												= CAST(REPLACE(ZMIGRA_PFUFERIASRECIBO.[Desconto de Irrf], ',', '.') AS FLOAT)
+  AND PFUFERIASRECIBO.BASEIRRF											= CAST(REPLACE(ZMIGRA_PFUFERIASRECIBO.[Base de Irrf], ',', '.') AS FLOAT)
+  AND PFUFERIASRECIBO.LIQUIDO											= CAST(REPLACE(ZMIGRA_PFUFERIASRECIBO.[Valor Líquido do Recibo de Fêrias], ',', '.') AS FLOAT)
+WHERE PFUFERIASRECIBO.CHAPA IS NULL
+ORDER BY 1,2
+
+======================================================================================================================
+VERBAS DE FERIAS======================================================================================================
+======================================================================================================================
+
+-USAR NO RM
+SELECT
+  CODCOLIGADA,
+  CHAPA,
+  FIMPERAQUIS,
+  DATAPAGTO,
+  CODEVENTO,
+  REF,
+  VALOR
+FROM PFUFERIASVERBAS
+
+SELECT ZMIGRA_PFUFERIASVERBAS.*
+FROM ZMIGRA_PFUFERIASVERBAS
+LEFT JOIN PFUFERIASVERBAS
+   ON PFUFERIASVERBAS.CODCOLIGADA										= ZMIGRA_PFUFERIASVERBAS.CODCOLIGADA
+  AND PFUFERIASVERBAS.CHAPA												= ZMIGRA_PFUFERIASVERBAS.CHAPA
+  AND FORMAT(CAST(PFUFERIASVERBAS.FIMPERAQUIS AS DATE), 'ddMMyyyy')		= ZMIGRA_PFUFERIASVERBAS.[Data final do período aquisitivo]
+  AND FORMAT(CAST(PFUFERIASVERBAS.DATAPAGTO AS DATE), 'ddMMyyyy')		= ZMIGRA_PFUFERIASVERBAS.[Data de pagamento das férias]
+  AND PFUFERIASVERBAS.CODEVENTO											= ZMIGRA_PFUFERIASVERBAS.CODEVENTO
+  AND PFUFERIASVERBAS.REF												= CAST(REPLACE(ZMIGRA_PFUFERIASVERBAS.[Valor referência do evento], ',','.') AS FLOAT)
+  AND PFUFERIASVERBAS.VALOR												= CAST(REPLACE(ZMIGRA_PFUFERIASVERBAS.[Valor da verba], ',','.') AS FLOAT)
+WHERE PFUFERIASVERBAS.CHAPA IS NULL
+ORDER BY 1,2
+
+======================================================================================================================
+HISTORIO DE AFASTAMENTO===============================================================================================
+======================================================================================================================
+
+-USAR NO RM 
+SELECT
+  CODCOLIGADA,
+  CHAPA,
+  DTINICIO,
+  DTFINAL,
+  TIPO,
+  MOTIVO
+FROM PFHSTAFT
+
+SELECT ZMIGRA_PFHSTAFT.*
+FROM ZMIGRA_PFHSTAFT
+LEFT JOIN PFHSTAFT
+   ON PFHSTAFT.CODCOLIGADA                      = ZMIGRA_PFHSTAFT.CODCOLIGADA
+  AND PFHSTAFT.CHAPA                            = ZMIGRA_PFHSTAFT.Chapa
+  AND FORMAT(PFHSTAFT.DTINICIO, 'ddMMyyyy')     = ZMIGRA_PFHSTAFT.[Data de início]
+
+  AND (
+	(
+		PFHSTAFT.DTFINAL IS NULL AND ZMIGRA_PFHSTAFT.[Data final] IS NULL
+	) OR (
+		FORMAT(PFHSTAFT.DTFINAL, 'ddMMyyyy')      = ZMIGRA_PFHSTAFT.[Data final]
+	)
+  )
+  AND PFHSTAFT.TIPO                             = ZMIGRA_PFHSTAFT.Tipo
+  AND PFHSTAFT.MOTIVO                           = ZMIGRA_PFHSTAFT.[Motivo do afastamento]
+WHERE PFHSTAFT.CHAPA IS NULL
+ORDER BY 1,2
+
+======================================================================================================================
+FICHA FINANCEIRA======================================================================================================
+======================================================================================================================
+
+-USAR NO RM
+SELECT 
+	CODCOLIGADA, 
+	CHAPA, 
+	ANOCOMP,
+	MESCOMP,
+	NROPERIODO,
+	CODEVENTO,
+	DTPAGTO,
+	REF,
+	VALOR,
+	VALORORIGINAL
+FROM PFFINANC
+
+-VERIFICAR FICHA FINANCEIRA
+SELECT
+	ZMIGRA_PFFINANC.*
+FROM ZMIGRA_PFFINANC
+LEFT JOIN PFFINANC
+  ON ZMIGRA_PFFINANC.CODCOLIGADA = PFFINANC.CODCOLIGADA
+  AND ZMIGRA_PFFINANC.CHAPA = PFFINANC.CHAPA
+  AND ZMIGRA_PFFINANC.[Ano de Competência] = PFFINANC.ANOCOMP
+  AND ZMIGRA_PFFINANC.[Mês de Competência] = PFFINANC.MESCOMP
+  AND ZMIGRA_PFFINANC.[Número do Período] = PFFINANC.NROPERIODO
+  AND ZMIGRA_PFFINANC.[Código do Evento] = PFFINANC.CODEVENTO
+  AND ZMIGRA_PFFINANC.[Data de Pagamento] = FORMAT(PFFINANC.DTPAGTO, 'ddMMyyyy')
+  AND CAST(REPLACE(ZMIGRA_PFFINANC.[Referência],',','.') AS float) = PFFINANC.REF
+  AND CAST(REPLACE(ZMIGRA_PFFINANC.[Valor],',','.') AS float) = PFFINANC.VALOR
+  AND CAST(REPLACE(ZMIGRA_PFFINANC.[Valor original],',','.') AS float) = PFFINANC.VALORORIGINAL
+WHERE PFFINANC.CHAPA IS NULL

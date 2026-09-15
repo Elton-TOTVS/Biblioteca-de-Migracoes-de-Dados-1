@@ -1,0 +1,188 @@
+USE SESC_EDUSOFT_MS
+GO
+
+SET NOCOUNT ON;
+
+IF OBJECT_ID('tempdb..#Colunas') IS NOT NULL
+    DROP TABLE #Colunas;
+
+CREATE TABLE #Colunas
+(
+    ID                   INT IDENTITY(1,1),
+    TipoConstraint       VARCHAR(2),
+    NomeConstraint       SYSNAME,
+    SchemaName           SYSNAME,
+    Tabela               SYSNAME,
+    Coluna               SYSNAME,
+    ObjectId              INT,
+    ColumnId              INT
+);
+
+-- ============================================================
+-- PKs
+-- ============================================================
+INSERT INTO #Colunas
+(
+    TipoConstraint,
+    NomeConstraint,
+    SchemaName,
+    Tabela,
+    Coluna,
+    ObjectId,
+    ColumnId
+)
+SELECT
+    'PK',
+    kc.name,
+    s.name,
+    t.name,
+    c.name,
+    t.object_id,
+    c.column_id
+FROM sys.key_constraints kc
+INNER JOIN sys.tables t
+    ON t.object_id = kc.parent_object_id
+INNER JOIN sys.schemas s
+    ON s.schema_id = t.schema_id
+INNER JOIN sys.index_columns ic
+    ON ic.object_id = kc.parent_object_id
+   AND ic.index_id = kc.unique_index_id
+INNER JOIN sys.columns c
+    ON c.object_id = ic.object_id
+   AND c.column_id = ic.column_id
+WHERE kc.type = 'PK';
+
+
+-- ============================================================
+-- FKs
+-- ============================================================
+INSERT INTO #Colunas
+(
+    TipoConstraint,
+    NomeConstraint,
+    SchemaName,
+    Tabela,
+    Coluna,
+    ObjectId,
+    ColumnId
+)
+SELECT
+    'FK',
+    fk.name,
+    s.name,
+    t.name,
+    c.name,
+    t.object_id,
+    c.column_id
+FROM sys.foreign_keys fk
+INNER JOIN sys.foreign_key_columns fkc
+    ON fkc.constraint_object_id = fk.object_id
+INNER JOIN sys.tables t
+    ON t.object_id = fk.parent_object_id
+INNER JOIN sys.schemas s
+    ON s.schema_id = t.schema_id
+INNER JOIN sys.columns c
+    ON c.object_id = fkc.parent_object_id
+   AND c.column_id = fkc.parent_column_id;
+
+
+-- ============================================================
+-- Monta SQL dinâmico
+-- ============================================================
+DECLARE
+    @SQL NVARCHAR(MAX) = N'',
+    @ID INT = 1,
+    @MaxID INT,
+    @TipoConstraint VARCHAR(2),
+    @NomeConstraint SYSNAME,
+    @SchemaName SYSNAME,
+    @Tabela SYSNAME,
+    @Coluna SYSNAME;
+
+SELECT @MaxID = MAX(ID)
+FROM #Colunas;
+
+
+WHILE @ID <= ISNULL(@MaxID, 0)
+BEGIN
+
+    SELECT
+        @TipoConstraint = TipoConstraint,
+        @NomeConstraint = NomeConstraint,
+        @SchemaName = SchemaName,
+        @Tabela = Tabela,
+        @Coluna = Coluna
+    FROM #Colunas
+    WHERE ID = @ID;
+
+
+    IF @SQL <> N''
+        SET @SQL += N'
+UNION ALL
+';
+
+
+    SET @SQL += N'
+SELECT
+    ' + QUOTENAME(@TipoConstraint, '''') + N' AS TipoConstraint,
+    ' + QUOTENAME(@NomeConstraint, '''') + N' AS NomeConstraint,
+    ' + QUOTENAME(@SchemaName, '''') + N' AS SchemaName,
+    ' + QUOTENAME(@Tabela, '''') + N' AS Tabela,
+    ' + QUOTENAME(@Coluna, '''') + N' AS Coluna,
+
+    COUNT_BIG(*) AS QtdLinhasTotal,
+
+    SUM(
+        CASE
+            WHEN ' + QUOTENAME(@Coluna) + N' IS NOT NULL
+            THEN 1
+            ELSE 0
+        END
+    ) AS QtdLinhasPreenchida,
+
+    CAST(
+        100.0 *
+        SUM(
+            CASE
+                WHEN ' + QUOTENAME(@Coluna) + N' IS NOT NULL
+                THEN 1
+                ELSE 0
+            END
+        )
+        / NULLIF(COUNT_BIG(*), 0)
+        AS DECIMAL(10,2)
+    ) AS PercentualPreenchido
+
+FROM ' + QUOTENAME(@SchemaName) + N'.' + QUOTENAME(@Tabela);
+
+
+    SET @ID += 1;
+END;
+
+
+-- ============================================================
+-- Ordenação final
+-- ============================================================
+IF @SQL <> N''
+BEGIN
+    SET @SQL = N'
+SELECT *
+FROM
+(
+' + @SQL + N'
+) AS Resultado
+ORDER BY
+    SchemaName,
+    Tabela,
+    TipoConstraint,
+    Coluna;
+';
+
+    -- Para conferir o SQL gerado, se necessário:
+    -- SELECT @SQL;
+
+    EXEC sys.sp_executesql @SQL;
+END;
+
+
+DROP TABLE #Colunas;

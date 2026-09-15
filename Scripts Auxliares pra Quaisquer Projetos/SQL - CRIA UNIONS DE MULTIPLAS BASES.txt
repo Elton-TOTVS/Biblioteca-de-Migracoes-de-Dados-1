@@ -1,0 +1,13 @@
+SELECT 
+	'SELECT * FROM '
+	+ QUOTENAME(name) + '.'
+	+ 'dbo.'
+	+ 'ZMIGRA_PFUNC'
+	+ CASE
+		WHEN ROW_NUMBER() OVER(
+			ORDER BY name
+		) < COUNT(*) OVER()
+		THEN ' UNION'
+		ELSE ''
+	END
+FROM sys.databases WHERE name LIKE '%GENNESIS%PRD'

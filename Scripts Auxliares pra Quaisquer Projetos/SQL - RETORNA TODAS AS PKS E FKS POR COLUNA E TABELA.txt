@@ -1,0 +1,118 @@
+USE SESC_EDUSOFT_MS
+GO
+
+IF OBJECT_ID('tempdb..#RESULTADO') IS NOT NULL
+    DROP TABLE #RESULTADO;
+
+CREATE TABLE #RESULTADO
+(
+    TABELA         SYSNAME,
+    COLUNA         SYSNAME,
+    TIPO           VARCHAR(20),
+    QTD_LINHAS     BIGINT,
+    QTD_NAO_NULOS  BIGINT
+);
+
+DECLARE
+    @Schema         SYSNAME,
+    @Tabela         SYSNAME,
+    @Coluna         SYSNAME,
+    @Tipo           VARCHAR(20),
+    @SQL            NVARCHAR(MAX),
+    @Total          INT,
+    @Atual          INT = 0;
+
+DECLARE CURSOR_COLUNAS CURSOR FAST_FORWARD FOR
+SELECT
+    KCU.TABLE_SCHEMA,
+    KCU.TABLE_NAME,
+    KCU.COLUMN_NAME,
+    TC.CONSTRAINT_TYPE
+FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS TC
+JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU
+    ON TC.CONSTRAINT_NAME = KCU.CONSTRAINT_NAME
+   AND TC.TABLE_SCHEMA = KCU.TABLE_SCHEMA
+   AND TC.TABLE_NAME = KCU.TABLE_NAME
+WHERE TC.CONSTRAINT_TYPE IN ('PRIMARY KEY','FOREIGN KEY')
+ORDER BY
+    KCU.TABLE_SCHEMA,
+    KCU.TABLE_NAME,
+    KCU.COLUMN_NAME;
+
+SELECT
+    @Total = COUNT(*)
+FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS TC
+JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU
+    ON TC.CONSTRAINT_NAME = KCU.CONSTRAINT_NAME
+   AND TC.TABLE_SCHEMA = KCU.TABLE_SCHEMA
+   AND TC.TABLE_NAME = KCU.TABLE_NAME
+WHERE TC.CONSTRAINT_TYPE IN ('PRIMARY KEY','FOREIGN KEY');
+
+OPEN CURSOR_COLUNAS;
+
+FETCH NEXT FROM CURSOR_COLUNAS
+INTO
+    @Schema,
+    @Tabela,
+    @Coluna,
+    @Tipo;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+    SET @Atual += 1;
+
+    RAISERROR(
+        '(%d/%d) Processando %s.%s.%s',
+        0,
+        1,
+        @Atual,
+        @Total,
+        @Schema,
+        @Tabela,
+        @Coluna
+    ) WITH NOWAIT;
+
+    SET @SQL = '
+    INSERT INTO #RESULTADO
+    SELECT
+        ''' + @Tabela + ''',
+        ''' + @Coluna + ''',
+        ''' + @Tipo + ''',
+        (
+            SELECT SUM(row_count)
+            FROM sys.dm_db_partition_stats
+            WHERE object_id = OBJECT_ID(''' + @Schema + '.' + @Tabela + ''')
+              AND index_id IN (0,1)
+        ),
+        (
+            SELECT COUNT(*)
+            FROM ' + QUOTENAME(@Schema) + '.' + QUOTENAME(@Tabela) + '
+            WHERE ' + QUOTENAME(@Coluna) + ' IS NOT NULL
+        );
+    ';
+
+    BEGIN TRY
+        EXEC sp_executesql @SQL;
+    END TRY
+    BEGIN CATCH
+        PRINT 'Erro em ' + @Schema + '.' + @Tabela + '.' + @Coluna;
+        PRINT ERROR_MESSAGE();
+    END CATCH;
+
+    FETCH NEXT FROM CURSOR_COLUNAS
+    INTO
+        @Schema,
+        @Tabela,
+        @Coluna,
+        @Tipo;
+END
+
+CLOSE CURSOR_COLUNAS;
+DEALLOCATE CURSOR_COLUNAS;
+
+SELECT *
+FROM #RESULTADO
+ORDER BY
+    TABELA,
+    COLUNA;

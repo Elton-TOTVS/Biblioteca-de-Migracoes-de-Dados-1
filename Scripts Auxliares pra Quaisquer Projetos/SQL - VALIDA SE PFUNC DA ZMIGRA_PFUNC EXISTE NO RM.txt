@@ -1,0 +1,16 @@
+--Verifica se ZMIGRA_PFUNC existe no RM
+--Para funcionamento é necessário que na mesma base exista a tabela PFUNC com os campos: 
+    CODCOLIGADA, 
+    CPF, 
+    NOME, 
+    DATAADMISSAO, 
+    DATADEMISSAO
+
+SELECT * 
+FROM ZMIGRA_PFUNC
+LEFT JOIN PFUNC
+   ON PFUNC.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+  AND PFUNC.CPF = ZMIGRA_PFUNC.CPF
+  AND PFUNC.NOME = ZMIGRA_PFUNC.NOME
+  AND FORMAT(PFUNC.DATAADMISSAO, 'ddMMyyyy') = ZMIGRA_PFUNC.[Data de Admissão]
+  AND FORMAT(PFUNC.DATADEMISSAO, 'ddMMyyyy') = ZMIGRA_PFUNC.[Data de Demissão]
