@@ -1,0 +1,276 @@
+SELECT
+      X.*
+  FROM	  
+	  (	  
+/* COLOCAR DENTRO DO RM PARA VERIRIFCAÇÃO */
+
+/* 1 - VERIFICA QUANTOS FUNCIONÁRIOS ESTÃO SEM PERÍODO AQUISITIVO */
+
+SELECT 
+      1 AS DADO,
+	  '1 - VERIFICA QUANTOS FUNCIONÁRIOS ESTÃO SEM PERÍODO AQUISITIVO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	   
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFUFERIAS AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA)
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+
+ UNION
+
+/* 2 - VERIFICA SE EXISTE ALGUM PERÍODO AQUISITIVO FECHADO SEM UM PERÍODO DE GOZO LANÇADO */
+
+SELECT 
+      2 AS DADO,
+	  '2 - VERIFICA SE EXISTE ALGUM PERÍODO AQUISITIVO FECHADO SEM UM PERÍODO DE GOZO LANÇADO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	   
+  FROM 
+      ZMIGRA_PFUFERIAS 
+ WHERE 
+      ZMIGRA_PFUFERIAS.[Indicativo de período aquisitivo aberto] = 0
+  AND NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFUFERIASPER AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUFERIAS.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUFERIAS.CHAPA)
+  
+  AND ZMIGRA_PFUFERIAS.CODCOLIGADA IN (1,2,3) 	
+  
+UNION					  
+
+/* 3 - VERIFICA SE O PERÍODO AQUISITIVO FECHADO POSSUI SALDO */
+
+SELECT 
+      3 AS DADO,
+	  '3 - VERIFICA SE O PERÍODO AQUISITIVO FECHADO POSSUI SALDO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUFERIAS 
+ WHERE 
+      ZMIGRA_PFUFERIAS.CODCOLIGADA IN (1,2,3) 
+  AND ZMIGRA_PFUFERIAS.[Indicativo de período aquisitivo aberto] = 0
+  AND ZMIGRA_PFUFERIAS.[Saldo do período de férias] <> 0 
+  
+
+UNION 
+
+/* 4 - VERIFICA SE EXISTE ALGUM PERÍODO DE GOZO SEM RECIBO DE FÉRIAS */
+
+SELECT 
+      4 AS DADO,
+	  '4 - VERIFICA SE EXISTE ALGUM PERÍODO DE GOZO SEM RECIBO DE FÉRIAS' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUFERIASPER 
+ WHERE 
+      ZMIGRA_PFUFERIASPER.CODCOLIGADA IN (1,2,3) 
+      AND NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFUFERIASRECIBO AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUFERIASPER.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUFERIASPER.CHAPA)
+
+UNION 
+    
+/* 5 - VERIFICA SE EXISTE ALGUM RECIBO DE FÉRIAS SEM AS VERBAS DE FÉRIAS */
+
+SELECT 
+      5 AS DADO,
+	  '5 - VERIFICA SE EXISTE ALGUM RECIBO DE FÉRIAS SEM AS VERBAS DE FÉRIAS' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUFERIASRECIBO 
+ WHERE 
+      ZMIGRA_PFUFERIASRECIBO.CODCOLIGADA IN (1,2,3) 
+      AND NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFUFERIASVERBAS AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUFERIASRECIBO.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUFERIASRECIBO.CHAPA)
+
+UNION 
+
+/* 6 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SALÁRIO */
+
+SELECT 
+      6 AS DADO,
+	  '6 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SALÁRIO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTSAL AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA)
+  AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+
+UNION
+
+/* 7 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SALÁRIO ONDE A DATA SEJA IGUAL A DE ADMISSÃO */
+
+SELECT 
+      7 AS DADO,
+	  '7 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SALÁRIO ONDE A DATA SEJA IGUAL A DE ADMISSÃO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTSAL AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA
+                      AND FORMAT(CAST(SUBSTRING(P.[Data de mudança (ddmmaaaa hh:mm:ss)], 5, 4) + -- Ano
+                                      SUBSTRING(P.[Data de mudança (ddmmaaaa hh:mm:ss)], 3, 2) + -- Mês
+                                      SUBSTRING(P.[Data de mudança (ddmmaaaa hh:mm:ss)], 1, 2)   -- Dia
+                              AS DATE),'ddMMyyyy')   = ZMIGRA_PFUNC.[Data de Admissão])
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+
+UNION
+
+/* 8 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SITUAÇÃO */
+
+SELECT 
+      8 AS DADO,
+	  '8 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SITUAÇÃO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTSIT AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA)
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3)  
+
+UNION
+
+/* 9 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SITUAÇÃO ONDE A DATA SEJA IGUAL A DE ADMISSÃO */
+
+SELECT 
+      9 AS DADO,
+	  '9 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SITUAÇÃO ONDE A DATA SEJA IGUAL A DE ADMISSÃO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	  
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTSIT AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA
+                      AND FORMAT(CAST(SUBSTRING(P.DATAMUDANCA, 5, 4) + -- Ano
+                                      SUBSTRING(P.DATAMUDANCA, 3, 2) + -- Mês
+                                      SUBSTRING(P.DATAMUDANCA, 1, 2)   -- Dia
+                              AS DATE),'ddMMyyyy')   = ZMIGRA_PFUNC.[Data de Admissão])
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+
+UNION 
+
+ /* 10 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE FUNÇÃO */
+
+SELECT 
+      10 AS DADO,
+	  '10 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE FUNÇÃO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTFCO AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA)
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3)      
+ 
+UNION
+
+/* 11 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE FUNÇÃO ONDE A DATA SEJA IGUAL A DE ADMISSÃO */
+
+SELECT 
+      11 AS DADO,
+	  '11 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE FUNÇÃO ONDE A DATA SEJA IGUAL A DE ADMISSÃO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	  
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTFCO AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA
+                       AND FORMAT(CAST(SUBSTRING(P.[Data da Mudança (ddmmaaaa hh:mm:ss)], 5, 4) + -- Ano
+                                       SUBSTRING(P.[Data da Mudança (ddmmaaaa hh:mm:ss)], 3, 2) + -- Mês
+                                       SUBSTRING(P.[Data da Mudança (ddmmaaaa hh:mm:ss)], 1, 2)   -- Dia
+                              AS DATE),'ddMMyyyy') = FORMAT(CAST(SUBSTRING(ZMIGRA_PFUNC.[Data de Admissão], 5, 4) + -- Ano
+                                                                 SUBSTRING(ZMIGRA_PFUNC.[Data de Admissão], 3, 2) + -- Mês
+                                                                 SUBSTRING(ZMIGRA_PFUNC.[Data de Admissão], 1, 2)   -- Dia
+                                                         AS DATE),'ddMMyyyy'))
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+
+UNION
+
+/* 12 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SEÇÃO */
+
+SELECT 
+      12 AS DADO,
+	  '12 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SEÇÃO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	 
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTSEC AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA)
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+
+UNION
+ 
+ /* 13 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SEÇÃO ONDE A DATA SEJA IGUAL A DE ADMISSÃO */
+
+SELECT 
+      13 AS DADO,
+	  '13 - VERIFICA SE TEM ALGUM FUNCIONÁRIOS SEM HISTÓRICO DE SEÇÃO ONDE A DATA SEJA IGUAL A DE ADMISSÃO' AS SCRIPT,
+	   CODCOLIGADA,
+       CHAPA	  
+  FROM 
+      ZMIGRA_PFUNC 
+ WHERE 
+      NOT EXISTS (SELECT 1
+                    FROM ZMIGRA_PFHSTSEC AS P 
+                    WHERE P.CODCOLIGADA = ZMIGRA_PFUNC.CODCOLIGADA
+                      AND P.CHAPA       = ZMIGRA_PFUNC.CHAPA
+                      AND FORMAT(CAST(SUBSTRING(P.[Data da Mudança (ddmmaaaa hh:mm:ss)], 5, 4) + -- Ano
+                                      SUBSTRING(P.[Data da Mudança (ddmmaaaa hh:mm:ss)], 3, 2) + -- Mês
+                                      SUBSTRING(P.[Data da Mudança (ddmmaaaa hh:mm:ss)], 1, 2)   -- Dia
+                              AS DATE),'ddMMyyyy') = FORMAT(CAST(SUBSTRING(ZMIGRA_PFUNC.[Data de Admissão], 5, 4) + -- Ano
+                                                                 SUBSTRING(ZMIGRA_PFUNC.[Data de Admissão], 3, 2) + -- Mês
+                                                                 SUBSTRING(ZMIGRA_PFUNC.[Data de Admissão], 1, 2)   -- Dia
+                                                         AS DATE),'ddMMyyyy'))
+ AND ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+
+ UNION
+
+ SELECT 
+     14 AS DADO,
+     '14 - VERIFICA SE TEM ALGUM FUNCIONÁRIO COM SALÁRIO ZERADO' AS SCRIPT,
+     CODCOLIGADA,
+     CHAPA
+ FROM 
+     ZMIGRA_PFUNC 
+ WHERE 
+     ZMIGRA_PFUNC.CODCOLIGADA IN (1,2,3) 
+ AND ZMIGRA_PFUNC.[Salário (Formato 999999999999,99)] = '0,00'
+
+ ) AS X
+ ORDER BY X.DADO, X.CODCOLIGADA

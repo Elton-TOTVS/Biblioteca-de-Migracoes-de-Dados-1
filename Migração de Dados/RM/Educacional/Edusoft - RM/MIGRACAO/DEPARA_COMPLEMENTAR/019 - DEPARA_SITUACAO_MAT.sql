@@ -1,0 +1,22 @@
+IF OBJECT_ID('ZDEPARA_STATUS_COMPL') IS NOT NULL
+   DROP TABLE ZDEPARA_STATUS_COMPL;
+
+SELECT 
+      SOPHIA.SITUACAO_MATRICULA.ID_SITUACAO_MATRICULA AS CODIGO,
+      SOPHIA.SITUACAO_MATRICULA.DESCRICAO             AS DESCRICAO,
+      14                                              AS CODCOLIGADA,
+      F.UNIDADE                                       AS CODFILIAL,
+      ''                                              AS CODFILIAL_PARA,
+      ''                                              AS NIVELENSINO,
+      ''                                              AS CODIGO_PARA,
+      ''                                              AS DESCRICAO_PARA
+      INTO ZDEPARA_STATUS_COMPL
+  FROM
+      SOPHIA.SITUACAO_MATRICULA
+      CROSS JOIN (
+                  SELECT UNIDADE FROM SOPHIA.MATRICULA GROUP BY UNIDADE
+                 ) F
+ WHERE
+      NOT EXISTS (SELECT 1 FROM ZDEPARA_STATUS AS Z WHERE Z.CODIGO = SOPHIA.SITUACAO_MATRICULA.ID_SITUACAO_MATRICULA AND Z.DESCRICAO = SOPHIA.SITUACAO_MATRICULA.DESCRICAO AND Z.CODFILIAL = F.UNIDADE) ;
+
+SELECT * FROM ZDEPARA_STATUS_COMPL ORDER BY 4,1;

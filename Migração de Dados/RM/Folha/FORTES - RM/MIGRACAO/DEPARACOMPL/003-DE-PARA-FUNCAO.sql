@@ -1,0 +1,35 @@
+-- Consulta complementar: retorna somente funcoes ainda nao existentes no DE-PARA anterior.
+;WITH NOVO_DEPARA AS
+(
+    SELECT DISTINCT
+           CAR.EMP_CODIGO AS EMPRESA_DE,
+           CAR.CODIGO AS CODIGO_DE,
+           LTRIM(RTRIM(CAR.NOME)) AS NOME_DE,
+           CAR.CBO_CODIGO AS CBO,
+           CAR.CBO2009_CODIGO AS CBO_2002,
+           COLIGADA.CODCOLIGADA AS CODCOLIGADA,
+           RIGHT('000000' + CAST(DENSE_RANK() OVER
+           (
+               ORDER BY TRIM(CAR.NOME), CAR.CBO2009_CODIGO
+           ) AS VARCHAR(6)), 6) AS CODIGO_PARA
+      FROM CAR
+      JOIN ZDEPARA_COLIGADAS AS COLIGADA
+        ON CAR.EMP_CODIGO = COLIGADA.EMPRESA_DE
+       AND EXISTS
+           (
+               SELECT 1
+                 FROM SEP
+                WHERE SEP.EMP_CODIGO = CAR.EMP_CODIGO
+                  AND SEP.CAR_CODIGO = CAR.CODIGO
+           )
+)
+SELECT NOVO_DEPARA.*
+  FROM NOVO_DEPARA
+ WHERE NOT EXISTS
+       (
+           SELECT 1
+             FROM ZDEPARA_FUNCOES AS ANTERIOR
+            WHERE ANTERIOR.EMPRESA_DE = NOVO_DEPARA.EMPRESA_DE
+              AND ANTERIOR.CODIGO_DE = NOVO_DEPARA.CODIGO_DE
+       )
+ ORDER BY NOVO_DEPARA.CODIGO_PARA;

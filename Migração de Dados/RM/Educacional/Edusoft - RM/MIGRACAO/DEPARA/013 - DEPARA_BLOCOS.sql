@@ -1,0 +1,18 @@
+IF OBJECT_ID('ZDEPARA_BLOCO') IS NOT NULL
+   DROP TABLE ZDEPARA_BLOCO
+;
+
+DECLARE @CODCOLIGADA INT
+SET @CODCOLIGADA = 13
+
+SELECT 
+	  ''					  AS CODIGO,
+	  ''					  AS UNIDADE,
+	  '' 					  AS DESCRICAO,
+	  @CODCOLIGADA            AS CODCOLIGADA,
+	  ''                      AS CODFILIAL_PARA,
+	  ''                      AS CODPREDIO_PARA,
+	  ''                      AS CODIGO_PARA
+	  INTO ZDEPARA_BLOCO
+
+SELECT * FROM ZDEPARA_BLOCO;

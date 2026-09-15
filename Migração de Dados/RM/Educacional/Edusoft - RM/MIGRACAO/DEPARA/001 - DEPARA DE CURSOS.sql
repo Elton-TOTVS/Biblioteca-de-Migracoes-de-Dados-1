@@ -1,0 +1,22 @@
+IF OBJECT_ID('ZDEPARA_SCURSO') IS NOT NULL
+    DROP TABLE ZDEPARA_SCURSO;
+
+DECLARE @CODCOLIGADA INT
+SET @CODCOLIGADA = 13
+
+SELECT 
+	  CUR_ID 				AS COD_CURSO_DE, 
+	  CUR_NOMCUR    		AS CURSO,
+	  @CODCOLIGADA         AS CODCOLIGADA,
+	  ''                    AS CODIGO_PARA,
+	  ''                    AS NIVEL_ENSINO,
+	  ''                    AS NOME_PARA,
+	  ''                    AS CURSO_PARA_HIST,
+	  ''                    AS NOME_PARA_HIST
+	  INTO ZDEPARA_SCURSO
+  FROM 
+      TB_CURSO (NOLOCK) 
+ORDER BY  
+      CUR_ID;
+
+SELECT * FROM ZDEPARA_SCURSO;

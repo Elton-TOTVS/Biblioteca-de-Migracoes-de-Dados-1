@@ -1,0 +1,30 @@
+-- Consulta complementar: retorna somente horarios ainda nao existentes no DE-PARA anterior.
+;WITH NOVO_DEPARA AS
+(
+    SELECT DISTINCT
+           HOR.EMP_CODIGO AS EMPRESA_DE,
+           HOR.CODIGO AS CODIGO_DE,
+           HOR.NOME AS NOME_DE,
+           COLIGADA.CODCOLIGADA AS COLIGADA_PARA,
+           '00001' AS CODIGO_PARA
+      FROM HOR
+      JOIN ZDEPARA_COLIGADAS AS COLIGADA
+        ON HOR.EMP_CODIGO = COLIGADA.EMPRESA_DE
+     WHERE EXISTS
+           (
+               SELECT 1
+                 FROM SEP
+                WHERE SEP.EMP_CODIGO = HOR.EMP_CODIGO
+                  AND SEP.HOR_CODIGO = HOR.CODIGO
+           )
+)
+SELECT NOVO_DEPARA.*
+  FROM NOVO_DEPARA
+ WHERE NOT EXISTS
+       (
+           SELECT 1
+             FROM ZDEPARA_HORARIO AS ANTERIOR
+            WHERE ANTERIOR.EMPRESA_DE = NOVO_DEPARA.EMPRESA_DE
+              AND ANTERIOR.CODIGO_DE = NOVO_DEPARA.CODIGO_DE
+       )
+ ORDER BY NOVO_DEPARA.COLIGADA_PARA;

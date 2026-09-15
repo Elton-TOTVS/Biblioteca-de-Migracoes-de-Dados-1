@@ -1,0 +1,10 @@
+IF OBJECT_ID('ZDEPARA_CONCEITO') IS NOT NULL
+  DROP TABLE ZDEPARA_CONCEITO ; 
+
+SELECT
+      CODIGO                      AS CFG_ACAD,
+      DESCRICAO                   AS DESCRICAO,*
+      
+
+  FROM
+      SOPHIA.CFG_ACAD

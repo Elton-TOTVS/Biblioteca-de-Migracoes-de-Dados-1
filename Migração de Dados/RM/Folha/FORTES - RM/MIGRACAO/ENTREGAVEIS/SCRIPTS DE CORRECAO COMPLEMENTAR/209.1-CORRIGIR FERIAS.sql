@@ -1,0 +1,139 @@
+IF OBJECT_ID('ZMIGRA_PFUFERIASPER_DIF') IS NOT NULL
+   DROP TABLE ZMIGRA_PFUFERIASPER_DIF
+;
+
+SELECT 
+    ZMIGRA_PFUFERIASPER.*
+    INTO ZMIGRA_PFUFERIASPER_DIF
+FROM ZMIGRA_PFUFERIASPER
+LEFT JOIN PFUFERIASPER
+   ON PFUFERIASPER.CODCOLIGADA = ZMIGRA_PFUFERIASPER.CODCOLIGADA
+  AND PFUFERIASPER.CHAPA = ZMIGRA_PFUFERIASPER.CHAPA
+
+  AND FORMAT(PFUFERIASPER.FIMPERAQUIS, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASPER.[Data final do período aquisitivo]
+
+  AND FORMAT(PFUFERIASPER.DATAPAGTO, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASPER.[Data de pagamento das férias]
+
+  AND FORMAT(PFUFERIASPER.DATAINICIO, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASPER.[Data de início das férias]
+
+  AND FORMAT(PFUFERIASPER.DATAFIM, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASPER.[Data de fim das férias]
+
+  AND FORMAT(PFUFERIASPER.DATAAVISO, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASPER.[Data de aviso das férias]
+
+WHERE PFUFERIASPER.CHAPA IS NULL AND ZMIGRA_PFUFERIASPER.CHAPA NOT IN ('001547', '003460')
+ORDER BY 1, 2;
+
+--==============================================================================
+--==============================================================================
+
+IF OBJECT_ID('ZMIGRA_PFUFERIASRECIBO_DIF') IS NOT NULL
+   DROP TABLE ZMIGRA_PFUFERIASRECIBO_DIF
+;
+
+SELECT 
+    ZMIGRA_PFUFERIASRECIBO.*
+    INTO ZMIGRA_PFUFERIASRECIBO_DIF
+FROM ZMIGRA_PFUFERIASRECIBO
+LEFT JOIN PFUFERIASRECIBO
+   ON PFUFERIASRECIBO.CODCOLIGADA = ZMIGRA_PFUFERIASRECIBO.CODCOLIGADA
+  AND PFUFERIASRECIBO.CHAPA = ZMIGRA_PFUFERIASRECIBO.CHAPA
+
+  AND FORMAT(PFUFERIASRECIBO.FIMPERAQUIS, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASRECIBO.[Data final do período aquisitivo]
+
+  AND FORMAT(PFUFERIASRECIBO.DATAPAGTO, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASRECIBO.[Data de pagamento das férias]
+
+  AND CAST(PFUFERIASRECIBO.IRRF AS DECIMAL(18,2)) =
+      TRY_CONVERT(
+          DECIMAL(18,2),
+          REPLACE(
+              REPLACE(
+                  LTRIM(RTRIM(ZMIGRA_PFUFERIASRECIBO.[Desconto de Irrf])),
+                  '.', ''
+              ),
+              ',', '.'
+          )
+      )
+
+  AND CAST(PFUFERIASRECIBO.BASEIRRF AS DECIMAL(18,2)) =
+      TRY_CONVERT(
+          DECIMAL(18,2),
+          REPLACE(
+              REPLACE(
+                  LTRIM(RTRIM(ZMIGRA_PFUFERIASRECIBO.[Base de Irrf])),
+                  '.', ''
+              ),
+              ',', '.'
+          )
+      )
+
+  AND CAST(PFUFERIASRECIBO.LIQUIDO AS DECIMAL(18,2)) =
+      TRY_CONVERT(
+          DECIMAL(18,2),
+          REPLACE(
+              REPLACE(
+                  LTRIM(RTRIM(ZMIGRA_PFUFERIASRECIBO.[Valor Líquido do Recibo de Férias])),
+                  '.', ''
+              ),
+              ',', '.'
+          )
+      )
+
+WHERE PFUFERIASRECIBO.CHAPA IS NULL AND ZMIGRA_PFUFERIASRECIBO.CHAPA NOT IN ('001547', '003460')
+ORDER BY 1, 2;
+
+--==============================================================================
+--==============================================================================
+
+IF OBJECT_ID('ZMIGRA_PFUFERIASVERBAS_DIF') IS NOT NULL
+   DROP TABLE ZMIGRA_PFUFERIASVERBAS_DIF
+;
+
+SELECT 
+    ZMIGRA_PFUFERIASVERBAS.*
+    INTO ZMIGRA_PFUFERIASVERBAS_DIF
+FROM ZMIGRA_PFUFERIASVERBAS
+LEFT JOIN PFUFERIASVERBAS
+   ON PFUFERIASVERBAS.CODCOLIGADA = ZMIGRA_PFUFERIASVERBAS.CODCOLIGADA
+  AND PFUFERIASVERBAS.CHAPA = ZMIGRA_PFUFERIASVERBAS.CHAPA
+
+  AND FORMAT(PFUFERIASVERBAS.FIMPERAQUIS, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASVERBAS.[Data final do período aquisitivo]
+
+  AND FORMAT(PFUFERIASVERBAS.DATAPAGTO, 'ddMMyyyy') =
+      ZMIGRA_PFUFERIASVERBAS.[Data de pagamento das férias]
+
+  AND PFUFERIASVERBAS.CODEVENTO = ZMIGRA_PFUFERIASVERBAS.[CODEVENTO]
+
+    AND CAST(PFUFERIASVERBAS.REF AS DECIMAL(18,2)) = 
+      TRY_CONVERT(
+        DECIMAL(18,2),
+        REPLACE(
+            REPLACE(
+                LTRIM(RTRIM(ZMIGRA_PFUFERIASVERBAS.[Valor referência do evento])),
+                '.',''
+            ),
+            ',','.'
+        )
+      )
+
+  AND CAST(PFUFERIASVERBAS.VALOR AS DECIMAL(18,2)) = 
+      TRY_CONVERT(
+        DECIMAL(18,2),
+        REPLACE(
+            REPLACE(
+                LTRIM(RTRIM(ZMIGRA_PFUFERIASVERBAS.[Valor da verba])),
+                '.',''
+            ),
+            ',','.'
+        )
+      )
+
+WHERE PFUFERIASVERBAS.CHAPA IS NULL AND ZMIGRA_PFUFERIASVERBAS.CHAPA NOT IN ('001547', '003460')
+ORDER BY 1, 2;  

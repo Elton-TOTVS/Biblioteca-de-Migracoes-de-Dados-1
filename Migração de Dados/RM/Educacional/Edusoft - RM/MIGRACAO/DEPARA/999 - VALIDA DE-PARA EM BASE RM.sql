@@ -1,0 +1,250 @@
+--SCURSO
+DECLARE @CODCOLIGADA AS INT = 13;
+
+;WITH CTE AS (
+    SELECT 
+    'SELECT X.* FROM (' AS SQL_GERADO, 1 AS ORDERM
+    UNION ALL
+    SELECT DISTINCT 
+        'SELECT '
+        + CAST(@CODCOLIGADA AS VARCHAR(10))
+        + ' AS CODCOLIGADA, '''
+        + CAST(X.CODIGO_PARA AS VARCHAR(100))
+        + ''' AS CODIGO'
+        + CASE 
+            WHEN ROW_NUMBER() OVER (
+                ORDER BY X.CODIGO_PARA
+            ) < COUNT(*) OVER ()
+            THEN ' UNION'
+            ELSE ''
+            END AS SQL_GERADO,
+            2 AS ORDERM
+    FROM ZDEPARA_SCURSO X
+    UNION ALL
+    SELECT') X WHERE NOT EXISTS (SELECT 1 FROM SCURSO WHERE SCURSO.CODCOLIGADA = X.CODCOLIGADA AND SCURSO.CODCURSO = X.CODIGO)' AS SQL_GERADO, 3 AS ORDERM
+)
+SELECT SQL_GERADO FROM CTE ORDER BY ORDERM;
+--=======================================================================================================================================================
+
+--SHABILITACAO
+DECLARE @CODCOLIGADA AS INT = 13;
+
+;WITH CTE AS (
+    SELECT 
+    'SELECT X.* FROM (' AS SQL_GERADO, 1 AS ORDERM
+    UNION ALL
+    SELECT 
+        'SELECT '
+        + CAST(@CODCOLIGADA AS VARCHAR(10))
+        + ' AS CODCOLIGADA, '''
+        + CAST(X.CODCURSO_PARA AS VARCHAR(100))
+        + ''' AS CODCURSO, '''
+        + CAST(X.CODIGO_PARA AS VARCHAR(100))
+        + ''' AS CODIGO'
+        + CASE 
+            WHEN ROW_NUMBER() OVER (
+                ORDER BY X.CODCURSO_PARA, X.CODIGO_PARA
+            ) < COUNT(*) OVER ()
+            THEN ' UNION'
+            ELSE ''
+            END AS SQL_GERADO,
+            2 AS ORDERM
+    FROM (
+        SELECT DISTINCT
+            CODCURSO_PARA,
+            CODIGO_PARA
+        FROM ZDEPARA_SHABILITACAO  
+    ) X
+    UNION ALL
+    SELECT') X WHERE NOT EXISTS (SELECT 1 FROM SHABILITACAO WHERE SHABILITACAO.CODCOLIGADA = X.CODCOLIGADA AND SHABILITACAO.CODCURSO = X.CODCURSO AND SHABILITACAO.CODHABILITACAO = X.CODIGO)' AS SQL_GERADO, 3 AS ORDERM
+)
+SELECT SQL_GERADO FROM CTE ORDER BY ORDERM;
+--=======================================================================================================================================================
+
+--SGRADE
+DECLARE @CODCOLIGADA AS INT = 13;
+
+;WITH CTE AS (
+    SELECT 
+    'SELECT X.* FROM (' AS SQL_GERADO, 1 AS ORDERM
+    UNION ALL
+    SELECT 
+        'SELECT '
+        + CAST(@CODCOLIGADA AS VARCHAR(10))
+        + ' AS CODCOLIGADA, '''
+        + CAST(X.CODCURSO_PARA AS VARCHAR(100))
+        + ''' AS CODCURSO, '''
+        + CAST(X.CODHABILITACAO_PARA AS VARCHAR(100))
+        + ''' AS CODHABILITACAO, '''
+        + CAST(X.CODIGO_PARA AS VARCHAR(100))
+        + ''' AS CODIGO'
+        + CASE 
+            WHEN ROW_NUMBER() OVER (
+                ORDER BY X.CODCURSO_PARA, X.CODHABILITACAO_PARA,X.CODIGO_PARA
+            ) < COUNT(*) OVER ()
+            THEN ' UNION'
+            ELSE ''
+            END AS SQL_GERADO,
+            2 AS ORDERM
+    FROM (
+        SELECT DISTINCT
+            CODCURSO_PARA,
+            CODHABILITACAO_PARA,
+            CODIGO_PARA
+        FROM ZDEPARA_SGRADE  
+    ) X
+    UNION ALL
+    SELECT') X WHERE NOT EXISTS (SELECT 1 FROM SGRADE WHERE SGRADE.CODCOLIGADA = X.CODCOLIGADA AND SGRADE.CODCURSO = X.CODCURSO AND SGRADE.CODHABILITACAO = X.CODHABILITACAO AND SGRADE.CODGRADE = X.CODIGO)' AS SQL_GERADO, 3 AS ORDERM
+)
+SELECT SQL_GERADO FROM CTE ORDER BY ORDERM;
+--=======================================================================================================================================================
+
+--SDISCGRADE
+DECLARE @CODCOLIGADA AS INT = 13;
+
+;WITH CTE AS (
+    SELECT 
+    'SELECT X.* FROM (' AS SQL_GERADO, 1 AS ORDERM
+    UNION ALL
+    SELECT 
+        'SELECT '
+        + CAST(@CODCOLIGADA AS VARCHAR(10))
+        + ' AS CODCOLIGADA, '''
+        + CAST(X.CODCURSO_PARA AS VARCHAR(100))
+        + ''' AS CODCURSO, '''
+        + CAST(X.CODHABILITACAO_PARA AS VARCHAR(100))
+        + ''' AS CODHABILITACAO, '''
+        + CAST(X.CODGRADE_PARA AS VARCHAR(100))
+        + ''' AS CODGRADE, '''
+        + CAST(X.CODPERIODO_PARA AS VARCHAR(100))
+        + ''' AS CODPERIODO, '''
+        + CAST(X.CODDISC_PARA AS VARCHAR(100))
+        + ''' AS CODIGO'
+        + CASE 
+            WHEN ROW_NUMBER() OVER (
+                ORDER BY X.CODCURSO_PARA, 
+                         X.CODHABILITACAO_PARA,
+                         X.CODGRADE_PARA,
+                         X.CODPERIODO_PARA,
+                         X.CODDISC_PARA
+            ) < COUNT(*) OVER ()
+            THEN ' UNION'
+            ELSE ''
+            END AS SQL_GERADO,
+            2 AS ORDERM
+    FROM (
+        SELECT DISTINCT
+            CODCURSO_PARA,
+            CODHABILITACAO_PARA,
+            CODGRADE_PARA,
+            CODPERIODO_PARA,
+            CODDISC_PARA
+        FROM ZDEPARA_SDISCGRADE  
+    ) X
+    UNION ALL
+    SELECT') X WHERE NOT EXISTS (SELECT 1 FROM SDISCGRADE WHERE SDISCGRADE.CODCOLIGADA = X.CODCOLIGADA AND SDISCGRADE.CODCURSO = X.CODCURSO AND SDISCGRADE.CODHABILITACAO = X.CODHABILITACAO AND SDISCGRADE.CODGRADE = X.CODGRADE AND SDISCGRADE.CODPERIODO = X.CODPERIODO AND SDISCGRADE.CODDISC = X.CODIGO)' AS SQL_GERADO, 3 AS ORDERM
+)
+SELECT SQL_GERADO FROM CTE ORDER BY ORDERM;
+--=======================================================================================================================================================
+
+--SHABILITACAOFILIAL
+DECLARE @CODCOLIGADA AS INT = 13;
+
+;WITH CTE AS (
+    SELECT 
+    'SELECT X.* FROM (' AS SQL_GERADO, 1 AS ORDERM
+    UNION ALL
+    SELECT 
+        'SELECT '
+        + CAST(@CODCOLIGADA AS VARCHAR(10))
+        + ' AS CODCOLIGADA, '
+        + CAST(X.NIVELENSINO AS VARCHAR(10))
+        + ' AS CODTIPOCURSO, '''
+        + CAST(X.CODCURSO_PARA AS VARCHAR(100))
+        + ''' AS CODCURSO, '''
+        + CAST(X.CODHABILITACAO_PARA AS VARCHAR(100))
+        + ''' AS CODHABILITACAO, '
+        + CAST(X.CODTURNO_PARA AS VARCHAR(100))
+        + ' AS CODTURNO, '
+        + CAST(X.CODFILIAL_PARA AS VARCHAR(100))
+        + ' AS CODFILIAL, '''
+        + CAST(X.CODGRADE_PARA AS VARCHAR(100))
+        + ''' AS CODGRADE, '
+        + CAST(X.CODIGO_PARA AS VARCHAR(100))
+        + ' AS CODIGO'
+        + CASE 
+            WHEN ROW_NUMBER() OVER (
+                ORDER BY X.NIVELENSINO, 
+                         X.CODCURSO_PARA, 
+                         X.CODHABILITACAO_PARA,
+                         X.CODTURNO_PARA,
+                         X.CODFILIAL_PARA,
+                         X.CODGRADE_PARA,
+                         X.CODIGO_PARA
+            ) < COUNT(*) OVER ()
+            THEN ' UNION'
+            ELSE ''
+            END AS SQL_GERADO,
+            2 AS ORDERM
+    FROM (
+        SELECT DISTINCT
+            NIVELENSINO,
+            CODCURSO_PARA,
+            CODHABILITACAO_PARA,
+            CODTURNO_PARA,
+            CODFILIAL_PARA,
+            CODGRADE_PARA,
+            CODIGO_PARA
+        FROM ZDEPARA_SHABILITACAOFILIAL
+    ) X
+    UNION ALL
+    SELECT') X WHERE NOT EXISTS (SELECT 1 FROM SHABILITACAOFILIAL WHERE SHABILITACAOFILIAL.CODCOLIGADA = X.CODCOLIGADA AND SHABILITACAOFILIAL.CODTIPOCURSO = X.CODTIPOCURSO AND SHABILITACAOFILIAL.CODCURSO = X.CODCURSO AND SHABILITACAOFILIAL.CODHABILITACAO = X.CODHABILITACAO AND SHABILITACAOFILIAL.CODGRADE = X.CODGRADE AND SHABILITACAOFILIAL.CODFILIAL = X.CODFILIAL AND SHABILITACAOFILIAL.CODTURNO = X.CODTURNO AND SHABILITACAOFILIAL.IDHABILITACAOFILIAL = X.CODIGO)' AS SQL_GERADO, 3 AS ORDERM
+)
+SELECT SQL_GERADO FROM CTE ORDER BY ORDERM;
+--=======================================================================================================================================================
+
+--STURMA
+DECLARE @CODCOLIGADA AS INT = 13;
+
+;WITH TURMAS AS (
+    SELECT 
+        'SELECT '
+        + CAST(@CODCOLIGADA AS VARCHAR(10))
+        + ' AS CODCOLIGADA, '
+        + CAST(X.FILIAL_PARA AS VARCHAR(100))
+        + ' AS CODFILIAL, '
+        + CAST(X.NIVEL_ENSINO AS VARCHAR(100))
+        + ' AS CODTIPOCURSO, '
+        + CAST(X.IDHABILITACAOFILIAL_PARA AS VARCHAR(100))
+        + ' AS IDHABILITACAOFILIAL, '''
+        + CAST(X.CODIGOTURMA_PARA AS VARCHAR(100))
+        + ''' AS CODIGO'
+        + CASE 
+            WHEN ROW_NUMBER() OVER (
+                ORDER BY X.FILIAL_PARA, 
+                         X.NIVEL_ENSINO,
+                         X.IDHABILITACAOFILIAL_PARA,
+                         X.CODIGOTURMA_PARA
+            ) < COUNT(*) OVER ()
+            THEN ' UNION'
+            ELSE ''
+            END AS SQL_GERADO,
+            2 AS ORDERM
+    FROM (
+        SELECT DISTINCT
+            FILIAL_PARA,
+            NIVEL_ENSINO,
+            IDHABILITACAOFILIAL_PARA,
+            CODIGOTURMA_PARA
+        FROM ZDEPARA_TURMAS  
+    ) X
+),
+CTE AS (
+    SELECT 
+    'SELECT X.* FROM (' AS SQL_GERADO, 1 AS ORDERM
+    UNION ALL
+    SELECT * FROM TURMAS WHERE SQL_GERADO IS NOT NULL
+    UNION ALL
+    SELECT') X WHERE NOT EXISTS (SELECT 1 FROM STURMA WHERE STURMA.CODCOLIGADA = X.CODCOLIGADA AND STURMA.CODFILIAL = X.CODFILIAL AND STURMA.CODTIPOCURSO = X.CODTIPOCURSO AND STURMA.IDHABILITACAOFILIAL = X.IDHABILITACAOFILIAL AND STURMA.CODTURMA = X.CODIGO)' AS SQL_GERADO, 3 AS ORDERM
+)
+SELECT SQL_GERADO FROM CTE ORDER BY ORDERM;

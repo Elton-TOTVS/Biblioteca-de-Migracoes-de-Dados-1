@@ -1,0 +1,9 @@
+.vs/
+metadata/
+project-config.json
+.env
+ZDEPARA.xlsx
+TXT/
+*.TXT
+*.txt
+*.xlsx

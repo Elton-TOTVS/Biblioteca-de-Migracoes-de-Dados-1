@@ -1,0 +1,43 @@
+-- Consulta complementar: retorna somente eventos ainda nao existentes no DE-PARA anterior.
+;WITH NOVO_DEPARA AS
+(
+    SELECT EVE.EMP_CODIGO AS EMPRESA_DE,
+           EVE.CODIGO AS CODIGO_DE,
+           EVE.NOME AS NOME_DE,
+           CASE
+               WHEN EVE.INFPROVDESC = 1 THEN 'P-PROVENTO'
+               WHEN EVE.INFPROVDESC = 2 THEN 'D-DESCONTO'
+               WHEN EVE.INFPROVDESC = 0 THEN 'B-BASE'
+           END AS TIPO_EVENTO,
+           COLIGADA.CODCOLIGADA AS COLIGADA_PARA,
+           CAST(' ' AS VARCHAR(10)) AS CODIGO_PARA,
+           '' AS NOME_RM,
+           CAST(' ' AS VARCHAR(10)) AS CODIGO_PARA_FICHA_MES1,
+           '' AS NOME_RM_1,
+           CAST(' ' AS VARCHAR(10)) AS CODIGO_PARA_FICHA_MES2,
+           '' AS NOME_RM_2,
+           CAST(' ' AS VARCHAR(10)) AS CODIGO_PARA_VERBAS_FERIAS,
+           '' AS NOME_RM_3
+      FROM EVE
+      JOIN ZDEPARA_COLIGADAS AS COLIGADA
+        ON EVE.EMP_CODIGO = COLIGADA.EMPRESA_DE
+     WHERE EXISTS
+           (
+               SELECT 1
+                 FROM EFP
+                WHERE EFP.EMP_CODIGO = EVE.EMP_CODIGO
+                  AND EFP.EVE_CODIGO = EVE.CODIGO
+           )
+)
+SELECT NOVO_DEPARA.*
+  FROM NOVO_DEPARA
+ WHERE NOT EXISTS
+       (
+           SELECT 1
+             FROM ZDEPARA_EVENTOS AS ANTERIOR
+            WHERE ANTERIOR.EMPRESA_DE = NOVO_DEPARA.EMPRESA_DE
+              AND ANTERIOR.CODIGO_DE = NOVO_DEPARA.CODIGO_DE
+       )
+ ORDER BY NOVO_DEPARA.COLIGADA_PARA,
+          NOVO_DEPARA.TIPO_EVENTO,
+          NOVO_DEPARA.NOME_DE;

@@ -1,0 +1,101 @@
+----------------------------------------------------------------------------------------------------      
+-- Script:					ZMIGRA_PFUFERIASVERBAS (Verbas de Férias)
+-- Última Alteração:		14/08/2024     
+-- Versão:					1 
+-- Origem:					FORTES
+-- Autor Alteração:			Rafael Stroppa
+----------------------------------------------------------------------------------------------------
+
+IF OBJECT_ID ('ZMIGRA_PFUFERIASVERBAS') IS NOT NULL
+	DROP TABLE ZMIGRA_PFUFERIASVERBAS
+
+;WITH DADOS AS (
+      SELECT
+        PAF.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                PAF.PAE_EMP_CODIGO,
+                PAF.FER_EFO_EPG_CODIGO,
+                PAF.FER_EFO_FOL_SEQ
+            ORDER BY
+                PAF.PAE_DTINICIAL DESC
+        ) AS ORDEM
+    FROM PAF
+),
+PAF AS (
+  SELECT * FROM DADOS WHERE ORDEM = 1
+)
+
+SELECT DADOS.CODCOLIGADA, --NÃO SERÁ USADO NO LAYOUT
+	   DADOS.CHAPA,
+	   DADOS."Data final do período aquisitivo",
+	   DADOS."Data de pagamento das férias",
+	   DADOS."CODEVENTO",
+	   DADOS."Quantidade de hora do evento",
+	   DADOS."Valor referência do evento",
+	   DADOS."Valor da verba",
+	   DADOS."Ind. de evento alterado pelo usuário"
+  INTO ZMIGRA_PFUFERIASVERBAS
+  FROM (
+		SELECT ZDEPARA_PFUNC.CODCOLIGADA, --NÃO SERÁ USADO NO LAYOUT
+
+			   ZDEPARA_PFUNC.CHAPA,
+			   REPLACE(CONVERT(VARCHAR,PAE.DTFINAL,103),'/','') AS "Data final do período aquisitivo",
+			   --GERAR DATA FINAL PERÍODO AQUISITIVO PARA PAE.DTFINAL IS NULL ACORDADO COM O CLIENTE
+			   /*	   
+			   CASE WHEN PAE.DTFINAL IS NULL THEN REPLACE(CONVERT(VARCHAR,DATEADD(DAY,365,DATEADD(DAY,-1,PAE.DTINICIAL)),103),'/','') 
+					ELSE REPLACE(CONVERT(VARCHAR,PAE.DTFINAL,103),'/','') 
+			   END AS "Data final do período aquisitivo",
+			   */
+			   REPLACE(CONVERT(VARCHAR,MIN(FOL.DTCALCULO),103),'/','') AS "Data de pagamento das férias",
+			   CASE WHEN FOL.FOLHA  = 4 AND ZDEPARA_EVENTOS.CODIGO_PARA = '0003' THEN '0098'
+					WHEN FOL.FOLHA  = 4 AND ZDEPARA_EVENTOS.CODIGO_PARA = '0004' THEN '0030' 
+					ELSE ISNULL(ZDEPARA_EVENTOS.CODIGO_PARA_VERBAS_FERIAS,ZDEPARA_EVENTOS.CODIGO_PARA)
+			   END AS CODEVENTO,
+			   0 AS "Quantidade de hora do evento",
+			   REPLACE(CAST(CAST(SUM(CAST(EFP.REFERENCIA AS DECIMAL(15,2))) AS NUMERIC(15,2)) AS VARCHAR(20)),'.',',') AS "Valor referência do evento",
+			   REPLACE(CAST(CAST(SUM(CASE WHEN EVE.INFPROVDESC = 1 THEN CAST(EFP.VALOR AS DECIMAL(15,2)) 
+										  WHEN EVE.INFPROVDESC = 2 THEN CAST(EFP.VALOR AS DECIMAL(15,2))
+										  ELSE 0
+									  END) AS NUMERIC(15,2)) AS VARCHAR(20)),'.',',') AS "Valor da verba",
+			   0 AS "Ind. de evento alterado pelo usuário"
+		  FROM PAE
+			   INNER JOIN ZDEPARA_PFUNC 
+					   ON ZDEPARA_PFUNC.EMP_CODIGO = PAE.EMP_CODIGO
+					  AND ZDEPARA_PFUNC.EPG_CODIGO = PAE.EPG_CODIGO
+			   INNER JOIN PAF
+						  INNER JOIN EFO 
+									 INNER JOIN FOL 
+											 ON FOL.EMP_CODIGO = EFO.EMP_CODIGO
+											AND FOL.SEQ        = EFO.FOL_SEQ
+									 INNER JOIN EFP 
+												INNER JOIN EVE
+														ON EVE.EMP_CODIGO = EFP.EMP_CODIGO
+													   AND EVE.CODIGO     = EFP.EVE_CODIGO
+												INNER JOIN ZDEPARA_EVENTOS
+														ON ZDEPARA_EVENTOS.EMPRESA_DE = EFP.EMP_CODIGO 
+													   AND ZDEPARA_EVENTOS.CODIGO_DE  = RIGHT('0000' + EFP.EVE_CODIGO, 4)
+											 ON EFP.EMP_CODIGO     = EFO.EMP_CODIGO
+											AND EFP.EFO_EPG_CODIGO = EFO.EPG_CODIGO
+											AND EFP.EFO_FOL_SEQ    = EFO.FOL_SEQ
+								  ON EFO.EMP_Codigo = PAF.PAE_EMP_Codigo
+								 AND EFO.EPG_Codigo = PAF.PAE_EPG_Codigo
+								 AND EFO.FOL_SEQ    = PAF.FER_EFO_FOL_SEQ
+					   ON PAF.PAE_EMP_CODIGO = PAE.EMP_CODIGO 
+					  AND PAF.PAE_EPG_CODIGO = PAE.EPG_CODIGO
+					  AND PAF.PAE_DTINICIAL  = PAE.DTINICIAL
+		 WHERE FOL.FOLHA IN (4, 5) -- FERIAS 
+		   --AND FOL.ENCERRADA = 'S' --#Ver
+		   AND FOL.DTCALCULO < ISNULL(ZDEPARA_PFUNC.DATADEMISSAO,CAST(GETDATE() AS DATE)) 
+		   AND PAE.DTFINAL IS NOT NULL
+		 GROUP BY ZDEPARA_PFUNC.CODCOLIGADA, 
+				  ZDEPARA_PFUNC.CHAPA,
+				  PAE.DTFINAL,
+				  PAE.DTINICIAL,
+				  CASE WHEN FOL.FOLHA  = 4 AND ZDEPARA_EVENTOS.CODIGO_PARA = '0003' THEN '0098'
+					   WHEN FOL.FOLHA  = 4 AND ZDEPARA_EVENTOS.CODIGO_PARA = '0004' THEN '0030' 
+					   ELSE ISNULL(ZDEPARA_EVENTOS.CODIGO_PARA_VERBAS_FERIAS,ZDEPARA_EVENTOS.CODIGO_PARA)
+				  END,
+				  SEQ
+		) DADOS
+ WHERE CODEVENTO LIKE '%[0-9]%'

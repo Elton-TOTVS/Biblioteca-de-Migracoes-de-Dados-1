@@ -1,0 +1,58 @@
+
+DECLARE @SchemaName SYSNAME = 'dbo';
+DECLARE @TableName  SYSNAME = 'TB_';
+
+SELECT
+    fk.name AS foreign_key_name,
+
+    parent_schema.name AS tabela_origem_schema,
+    parent_table.name  AS tabela_origem,
+    parent_column.name AS coluna_origem,
+
+    referenced_schema.name AS tabela_referenciada_schema,
+    referenced_table.name  AS tabela_referenciada,
+    referenced_column.name AS coluna_referenciada,
+
+    CASE
+        WHEN referenced_schema.name = @SchemaName
+         AND referenced_table.name = @TableName
+            THEN 'Tabelas que apontam para a tabela informada'
+        WHEN parent_schema.name = @SchemaName
+         AND parent_table.name = @TableName
+            THEN 'Tabelas apontadas pela tabela informada'
+    END AS tipo_relacionamento
+FROM sys.foreign_keys fk
+INNER JOIN sys.foreign_key_columns fkc
+    ON fkc.constraint_object_id = fk.object_id
+
+INNER JOIN sys.tables parent_table
+    ON parent_table.object_id = fkc.parent_object_id
+INNER JOIN sys.schemas parent_schema
+    ON parent_schema.schema_id = parent_table.schema_id
+INNER JOIN sys.columns parent_column
+    ON parent_column.object_id = parent_table.object_id
+   AND parent_column.column_id = fkc.parent_column_id
+
+INNER JOIN sys.tables referenced_table
+    ON referenced_table.object_id = fkc.referenced_object_id
+INNER JOIN sys.schemas referenced_schema
+    ON referenced_schema.schema_id = referenced_table.schema_id
+INNER JOIN sys.columns referenced_column
+    ON referenced_column.object_id = referenced_table.object_id
+   AND referenced_column.column_id = fkc.referenced_column_id
+
+WHERE
+    (
+        parent_schema.name = @SchemaName
+        AND parent_table.name = @TableName
+    )
+    OR
+    (
+        referenced_schema.name = @SchemaName
+        AND referenced_table.name = @TableName
+    )
+ORDER BY
+    tipo_relacionamento,
+    tabela_origem,
+    foreign_key_name,
+    fkc.constraint_column_id;
